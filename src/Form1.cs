@@ -51,7 +51,7 @@ namespace rebuild
                 BinaryWriter writer = new BinaryWriter(stream);
                 ARF_HEADER arf_head = new ARF_HEADER();
                 arf_head.e_magic = 0x00020001;
-                arf_head.e_unknow = 0x538df602;
+                arf_head.e_unknow = 0x00000000;
                 arf_head.e_filesize = 0xadafea;
                 arf_head.e_reserved0 = 0;
                 arf_head.e_nsections = 0x1b;
