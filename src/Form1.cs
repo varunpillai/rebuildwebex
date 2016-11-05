@@ -32,7 +32,7 @@ namespace rebuild
         void ClearLog()
         {
             textLog.Clear();
-            textLog.Text = "Webex Rebuild Tool v0.1\r\n======================\r\n\r\n1) Selecciona el directorio que contiene la sesion de webex. Si conoces la ruta escribela directamente.\r\n\r2) Pulsa el boton 'Go'\r\n3) La herramienta generara el archivo rebuild.arf";
+            textLog.Text = "Webex Rebuild Tool v0.1\r\n======================\r\n\r\n1) Select the directory containing the WebEx session. If you know the path write it directly.\r\n\r2) Pulsa el boton 'Go'\r\n3) The tool will generate the file rebuild.arf";
    
 
         }
@@ -101,7 +101,7 @@ namespace rebuild
                 }
                 writer.Flush();
                 writer.Close();
-                toLog("[=] Archivo reconstruido: " + ficheroSalida);
+                toLog("[=] File Re-constructed: " + ficheroSalida);
                 MessageBox.Show("Reconstruccion finalizada","Correcto",MessageBoxButtons.OK,  MessageBoxIcon.Information);
             }
           
@@ -143,6 +143,8 @@ namespace rebuild
             if (Directory.Exists(ruta))
             {
                 string[] Files_CFG = Directory.GetFiles(ruta, "*.conf", SearchOption.TopDirectoryOnly);
+                MessageBox.Show(" FILES_CFG: " + Files_CFG.Length);
+
                 string[] Files_STD = Directory.GetFiles(ruta, "*.std", SearchOption.TopDirectoryOnly).OrderBy(o => new FileInfo(o).Name).ToArray();
                 string[] Files_WAV = Directory.GetFiles(ruta, "*.wav", SearchOption.TopDirectoryOnly);
                 string[] Files_VID = Directory.GetFiles(ruta, "*_4_*.dat", SearchOption.TopDirectoryOnly).OrderBy(o => new FileInfo(o).Name).ToArray();
@@ -151,7 +153,10 @@ namespace rebuild
                 string[] Files_FINMM = Directory.GetFiles(ruta, "*_6_*.dat", SearchOption.TopDirectoryOnly).OrderBy(o => new FileInfo(o).Name).ToArray(); ;
                 string[] Files_FINMM_IDX = Directory.GetFiles(ruta, "*_6_*.idx", SearchOption.TopDirectoryOnly).OrderBy(o => new FileInfo(o).Name).ToArray(); ;
                 string[] Files_FINMM_CAD = Directory.GetFiles(ruta, "*_6_*.cad", SearchOption.TopDirectoryOnly).OrderBy(o => new FileInfo(o).Name).ToArray(); ;
-                string[] Files_FINMM_CAI = Directory.GetFiles(ruta, "*_6_*.cai", SearchOption.TopDirectoryOnly ).OrderBy(o => new FileInfo(o).Name).ToArray(); ;
+                string[] Files_FINMM_CAI = Directory.GetFiles(ruta, "*_6_*.cai", SearchOption.TopDirectoryOnly).OrderBy(o => new FileInfo(o).Name).ToArray(); ;
+
+                string[] Files_SND = Directory.GetFiles(ruta, "*_20_*.dat", SearchOption.TopDirectoryOnly);
+                string[] Files_SND_IDX = Directory.GetFiles(ruta, "*_20_*.idx", SearchOption.TopDirectoryOnly);
 
                 string[] Files_BACKUP = Directory.GetFiles(ruta, "*_21_*.dat", SearchOption.TopDirectoryOnly);
                 string[] Files_BACKUP_IDX = Directory.GetFiles(ruta, "*_21_*.idx", SearchOption.TopDirectoryOnly);
@@ -161,12 +166,12 @@ namespace rebuild
                 // Comprobamos el tener al menos un archivo wav y un archivo conf
                 if (Files_CFG.Length != 1/* || Files_WAV.Length != 1*/)
                 {
-                    MessageBox.Show("Algo a fallado, lo mismo han cambiado el formato ....");
+                    MessageBox.Show("Something failed, so have changed the format ....");
                     return false;
                 }
                 else
                 {
-                    // Si Existe el archivo de CHAT lo añadimos
+                    // If the file exists we add chat
                     if (Files_STD.Length >0)
                     {
                         toLog("[+] Chat file: " + Path.GetFileName(Files_STD[0]));
@@ -183,7 +188,7 @@ namespace rebuild
                     {
                         toLog("[-] Chat file: Not found.");
                     }
-                    // Añadimos el archivo .CFG
+                    // Add the .CFG file
                     if (Files_CFG.Length > 0)
                     {
                         toLog("[+] Config file: " + Path.GetFileName(Files_CFG[0]));
@@ -195,7 +200,7 @@ namespace rebuild
                         toLog("[-] Config file: Not found.");
                     }
 
-                    // AÑADIMOS LOS SEGMENTOS DE VIDEO y INDICE VIDEO
+                    // We add segment index Video and Video
                     if (Files_VID.Length > 0 && Files_VID_IDX.Length > 0 && Files_VID.Length == Files_VID_IDX.Length)
                     {
                         for (int x = 0; x < Files_VID.Length; x++)
@@ -223,12 +228,40 @@ namespace rebuild
                             toLog("[-] video or index file not pairs.");
                     }
 
+                    // We add segment index Sound and Sound
+                    if (Files_SND.Length > 0 && Files_SND_IDX.Length > 0 && Files_SND.Length == Files_SND_IDX.Length)
+                    {
+                        for (int x = 0; x < Files_SND.Length; x++)
+                        {
+                            // Añadimos Sound
+                            toLog(string.Format(@"[+] Sound file {0}/{1} : {2}", x + 1, Files_SND.Length, Path.GetFileName(Files_SND[x].ToString())));
+
+                            ListaContenedor.Add(new FileItems(Files_SND[x], FileItems.tipoSegmento.snd));
+                            dt.Rows.Add(AñadeArchivoAGrid(Files_SND[x]));
+
+                            // Añadimos INDICE Sound
+                            toLog(string.Format(@"[+] Index file {0}/{1} : {2}", x + 1, Files_SND_IDX.Length, Path.GetFileName(Files_SND[x].ToString())));
+                            ListaContenedor.Add(new FileItems(Files_SND_IDX[x], FileItems.tipoSegmento.snd_idx));
+                            dt.Rows.Add(AñadeArchivoAGrid(Files_SND_IDX[x]));
+
+                        }
+                    }
+                    else
+                    {
+                        if (Files_SND.Length == 0)
+                            toLog("[-] Video file: Not found.");
+                        if (Files_SND_IDX.Length == 0)
+                            toLog("[-] Index file: Not found.");
+                        if (Files_SND.Length != Files_SND_IDX.Length)
+                            toLog("[-] video or index file not pairs.");
+                    }
+
                     // AÑADIMOS WAV
                     if (Files_WAV.Length == 1)
                     {
                         toLog("[+] Wav file: " + Path.GetFileName(Files_WAV[0]));
                         dt.Rows.Add(AñadeArchivoAGrid(Files_WAV[0]));
-                        ListaContenedor.Add(new FileItems(Files_WAV[0], FileItems.tipoSegmento.snd ));
+                        ListaContenedor.Add(new FileItems(Files_WAV[0], FileItems.tipoSegmento.wav ));
                     }
                     else
                     {
@@ -422,11 +455,14 @@ namespace rebuild
             cfg =       0x70112,
             video =     0x7010c,
             video_idx = 0x7010d,
-            snd =       0x70105,
+            wav =       0x70105,
             mmfin =     0x70114,
             mmfin_idx = 0x70115,
             mmfin_cad = 0x7010A,
             mmfin_cai = 0x7010B,
+            //          new code _20_ dat idx: probably sound
+            snd =       0x7010E,
+            snd_idx =   0x7010F,
             backup =    0x70110,
             backup_idx =0x70111
 
